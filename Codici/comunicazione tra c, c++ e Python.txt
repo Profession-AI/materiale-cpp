@@ -1,0 +1,57 @@
+comunicazione tra c, c++ e Python main.c.cpp
+
+#include <stdio.h>
+
+int main() {
+    char input[100];
+    fgets(input, sizeof(input), stdin);
+    printf("Hai digitato: %s", input);
+    fflush(stdout);
+
+    return 0;
+}
+
+
+Subprocess_and_C.py
+
+#include <iostream>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main() {
+    int pipes[2];
+    pipe(pipes);
+    char input[100];
+    printf("Scrivi il messaggio: ");
+    fgets(input, sizeof(input), stdin);
+
+    if (fork() == 0) {
+        close(pipes[0]);
+        dup2(pipes[1], 1); //main to stdout PIPE
+        execlp("cat", "cat", NULL);
+        exit(0);
+    } else {
+        close(pipes[1]);
+        printf("Il processo padre legge dal pipe e invia al lato C\n");
+        write(pipes[0], input, strlen(input));
+        
+        wait(NULL);
+        
+        close(pipes[0]);
+        
+        char output[100];
+        
+        read(pipes[1], output, sizeof(output));
+        
+        printf("Ho ricevuto dal lato C: %s", output.strip());
+        
+        wait(NULL);
+        
+        printf("Attedo che il processo lato C termini.\n");
+        
+       return(0);
+   }
+}
